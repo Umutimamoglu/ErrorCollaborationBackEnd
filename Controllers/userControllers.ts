@@ -5,7 +5,8 @@ import jwt from 'jsonwebtoken';
 import { IUser } from '../types/index';
 import dotenv from 'dotenv';
 import User from "../models/userModel";
-import validator from "validator"; // Düzeltildi
+import validator from "validator";
+import { error } from "console";
 
 dotenv.config();
 
@@ -15,18 +16,20 @@ dotenv.config();
  * @returns Oluşturulan JWT.
  */
 const getUserToken = (_id: Types.ObjectId) => {
-    const jwtKey = process.env.JWT_SECRET_KEY || 'fallback_secret_key';
-    return jwt.sign({ _id: _id.toString() }, jwtKey, { expiresIn: "3d" });
+    const jwt_key = process.env.JWT_SECRET_KEY;
+    return jwt.sign({ _id }, jwt_key, { expiresIn: "7d" });
 };
 
 export const createUser = async (request: Request, response: Response) => {
     try {
         const { name, email, password } = request.body;
 
-        if (!name || !email || !password)
+        if (!name || !email || !password) {
             return response.status(400).json({ message: "All fields are required" });
-        if (!validator.isEmail(email))
+        }
+        if (!validator.isEmail(email)) {
             return response.status(400).json({ message: "Email must be a valid email" });
+        }
 
         let user = await User.findOne({ email });
         if (user) {
@@ -41,8 +44,8 @@ export const createUser = async (request: Request, response: Response) => {
         });
 
         await user.save();
-
         const token = getUserToken(user._id);
+
         return response.status(201).json({ _id: user._id, name, token });
     } catch (error) {
         console.error("Error in createUser", error);
@@ -51,27 +54,25 @@ export const createUser = async (request: Request, response: Response) => {
 };
 
 
-export const loginUser = async (req, res) => {
-    const { email, password } = req.body;
-
+export const loginUser = async (request: Request, response: Response) => {
     try {
+        const { email, password } = request.body;
         let user = await User.findOne({ email });
+
         if (!user) {
-            console.log("User not found with email:", email);
-            return res.status(400).json("Invalid email or password");
+            return response.status(400).json("Invalid email or password");
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
         if (!isValidPassword) {
-            console.log("Invalid password for user:", email);
-            return res.status(400).json("Invalid email or password");
+            return response.status(400).json("Invalid email or password");
         }
 
         const token = getUserToken(user._id);
-        res.status(200).json({ _id: user._id, name: user.name, email, token });
+
+        response.status(200).json({ _id: user._id, name: user.name, email, token });
     } catch (error) {
-        console.log(error);
-        res.status(500).json("Server error");
+        console.error("loginUser Error:", error);
+        response.status(500).json("Server error");
     }
 };
-

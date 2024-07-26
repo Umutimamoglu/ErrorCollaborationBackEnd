@@ -3,21 +3,28 @@ import mongoose, { Schema } from "mongoose";
 const errorSchema = new mongoose.Schema({
     user: {
         type: Schema.Types.ObjectId,
-        required: true,
+        required: false,
         ref: "User",  // User modeline referans verir.
     },
     name: {
         type: String,
-        required: true,
+        required: false,
     },
     isFixed: {
         type: Boolean,
         default: false,
     },
-    type: {
+
+    howdidifixit: {
+        type: String,
+        required: false
+
+    },
+    language: {
         type: String,
         required: true,
     },
+
     image: {
         type: String,  // Görselin URL'si veya dosya yolu.
         required: false,  // Opsiyonel olarak tanımlanabilir.

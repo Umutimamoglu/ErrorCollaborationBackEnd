@@ -18,11 +18,13 @@ export interface IIcon {
 }
 
 export interface IError {
+    _id: string
     name: string;
-    user: string;
+    user: IUser | string;
     isFixed: boolean;
-    type: string;
+    howdidifixid?: string,
     image?: string;
+    language: string;
     color?: string;
     icon?: string;
     date: string;

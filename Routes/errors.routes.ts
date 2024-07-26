@@ -1,10 +1,11 @@
-import express from "express"
-import { createError } from "../Controllers/errorsController"
-
-const errorRoutes = express.Router()
-
-errorRoutes.route("/create").post(createError)
+import express from "express";
+import { createError } from "../Controllers/errorsController";
 
 
 
-export default errorRoutes
+const router = express.Router();
+
+router.post("/create", createError);
+
+
+export default router;

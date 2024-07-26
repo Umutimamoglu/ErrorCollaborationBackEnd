@@ -19,7 +19,6 @@ export const authenticationMiddleware = async (request: AuthRequest, response: R
         const existingUser = await User.findById(_id);
 
         if (existingUser) {
-
             request.userId = existingUser._id.toString();  // Convert ObjectId to string if necessary
             next();
         } else {

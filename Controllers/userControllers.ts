@@ -2,11 +2,10 @@ import { Request, Response } from "express";
 import bcrypt from 'bcrypt';
 import { Types } from 'mongoose';
 import jwt from 'jsonwebtoken';
-import { IUser } from '../types/index';
 import dotenv from 'dotenv';
 import User from "../models/userModel";
 import validator from "validator";
-import { error } from "console";
+import { IUser } from "../types";
 
 dotenv.config();
 
@@ -52,27 +51,33 @@ export const createUser = async (request: Request, response: Response) => {
         return response.status(500).json({ message: "Server error", error });
     }
 };
-
-
 export const loginUser = async (request: Request, response: Response) => {
     try {
-        const { email, password } = request.body;
-        let user = await User.findOne({ email });
-
-        if (!user) {
-            return response.status(400).json("Invalid email or password");
+        const { email, password }: IUser = request.body;
+        console.log("Gelen istek verileri:", request.body); // Gelen verileri kontrol edin
+        const existingUser = await User.findOne({ email });
+        if (!existingUser) {
+            console.log("E-posta için kullanıcı bulunamadı:", email);
+            return response.status(409).send({ message: "Kullanıcı bulunamadı" });
         }
 
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-            return response.status(400).json("Invalid email or password");
+        const isPasswordIdentical = await bcrypt.compare(password, existingUser.password);
+        if (isPasswordIdentical) {
+            const token = getUserToken(existingUser._id);
+            console.log("Kullanıcı başarıyla kimlik doğruladı:", email);
+            return response.send({
+                token,
+                user: {
+                    email: existingUser.email,
+                    name: existingUser.name,
+                },
+            });
+        } else {
+            console.log("Yanlış şifre için e-posta:", email);
+            return response.status(400).send({ message: "Yanlış kimlik bilgileri" });
         }
-
-        const token = getUserToken(user._id);
-
-        response.status(200).json({ _id: user._id, name: user.name, email, token });
     } catch (error) {
-        console.error("loginUser Error:", error);
-        response.status(500).json("Server error");
+        console.log('loginUser Hatası:', error);
+        response.status(500).send({ message: "Sunucu hatası" });
     }
 };

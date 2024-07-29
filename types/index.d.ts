@@ -22,10 +22,8 @@ export interface IError {
     name: string;
     user: IUser | string;
     isFixed: boolean;
-    howdidifixid?: string,
     image?: string;
     language: string;
     color?: string;
-    icon?: string;
-    date: string;
+    type?: string;
 }

@@ -5,9 +5,16 @@ import connectToDatabase from "./db";
 import userRoutes from "../Routes/user.routes";
 import errorRoutes from "../Routes/errors.routes";
 import { authenticationMiddleware } from "../middleware ";
-
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
+
+// Uploads dizininin varlığını kontrol edin ve yoksa oluşturun
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
 
 const app = express();
 app.use(express.json());

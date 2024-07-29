@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from "../models/userModel";
 
 export interface AuthRequest extends Request {
+    file: any;
     userId: string;  // Only store the user's ID
 }
 

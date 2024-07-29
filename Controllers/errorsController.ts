@@ -1,16 +1,21 @@
-import { Response, Request } from "express";
+import { Response } from "express";
 import { IError } from '../types/index';
 import ErrorM from "../models/errorModel";
 import { AuthRequest } from "../middleware ";
 
 
-
 export const createError = async (request: AuthRequest, response: Response) => {
     try {
-        const { color, icon, name, isFixed, image }: IError = request.body;
+        const { color, name, isFixed, language, type }: IError = request.body;
+        const image = request.file ? request.file.path : null; // Yüklenen dosyanın yolu
+
         if (!request.userId) {
             console.log("User ID is not available. User not authenticated.");
             return response.status(401).json({ message: "User not authenticated." });
+        }
+
+        if (!name || !color || !language || !type) {
+            return response.status(400).json({ message: "Required fields are missing." });
         }
 
         const newError = await ErrorM.create({
@@ -19,9 +24,9 @@ export const createError = async (request: AuthRequest, response: Response) => {
             isFixed: isFixed || false,
             image,
             color,
-            icon
+            language,
+            type,
         });
-
 
         response.status(201).json(newError);
     } catch (error) {

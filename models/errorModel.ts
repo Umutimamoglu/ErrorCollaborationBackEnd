@@ -1,10 +1,11 @@
+// Güncellenmiş Kodlar
 import mongoose, { Schema } from "mongoose";
 
 const errorSchema = new mongoose.Schema({
     user: {
         type: Schema.Types.ObjectId,
         required: false,
-        ref: "User",  // User modeline referans verir.
+        ref: "User",
     },
     name: {
         type: String,
@@ -15,32 +16,26 @@ const errorSchema = new mongoose.Schema({
         default: false,
     },
 
-    howdidifixit: {
+    image: {
         type: String,
-        required: false
-
+        required: false,
     },
     language: {
         type: String,
         required: true,
-    },
-
-    image: {
-        type: String,  // Görselin URL'si veya dosya yolu.
-        required: false,  // Opsiyonel olarak tanımlanabilir.
     },
     color: {
         id: { type: String },
         name: { type: String },
         code: { type: String },
     },
-    icon: {
-        id: { type: String },
-        name: { type: String },
-        symbol: { type: String },
+    type: {
+        type: String,
+        required: true,
     },
+
 }, {
-    timestamps: true,  // Oluşturulma ve güncelleme zamanını otomatik ekler.
+    timestamps: true,
 });
 
 const ErrorM = mongoose.model("Error", errorSchema);

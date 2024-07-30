@@ -34,3 +34,24 @@ export const createError = async (request: AuthRequest, response: Response) => {
         response.status(500).json({ message: "Something went wrong", error: error.message });
     }
 };
+
+
+export const getMyBugs = async (request: AuthRequest, response: Response) => {
+    try {
+        if (!request.userId) {
+            console.log("User ID is not available. User not authenticated.");
+            return response.status(401).json({ message: "User not authenticated." });
+        }
+
+        const userErrors = await ErrorM.find({ user: request.userId });
+
+        if (!userErrors) {
+            return response.status(404).json({ message: "No errors found for this user." });
+        }
+
+        response.status(200).json(userErrors);
+    } catch (error) {
+        console.error("Error in getMyBugs:", error);
+        response.status(500).json({ message: "Something went wrong", error: error.message });
+    }
+};

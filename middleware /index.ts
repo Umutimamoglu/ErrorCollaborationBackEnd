@@ -4,7 +4,7 @@ import User from "../models/userModel";
 
 export interface AuthRequest extends Request {
     file: any;
-    userId: string;  // Only store the user's ID
+    userId: string;
 }
 
 export const authenticationMiddleware = async (request: AuthRequest, response: Response, next: NextFunction) => {
@@ -15,12 +15,18 @@ export const authenticationMiddleware = async (request: AuthRequest, response: R
             return response.status(401).json({ error: "Authorization required" });
         }
 
-        const token = authorization.split(' ')[1]; // Assuming it's a 'Bearer token'
-        const { _id } = jwt.verify(token, process.env.JWT_SECRET_KEY || "fallback_secret_key"); // Use the secret key from .env or fallback
-        const existingUser = await User.findById(_id);
+        const token = authorization.split(' ')[1];
+        console.log("Token received:", token);
 
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY || "fallback_secret_key");
+        console.log("Decoded token:", decodedToken);
+
+        const { _id } = decodedToken as { _id: string }; // Token'dan gelen _id
+
+        const existingUser = await User.findById(_id);
         if (existingUser) {
-            request.userId = existingUser._id.toString();  // Convert ObjectId to string if necessary
+            console.log("User found:", existingUser._id);
+            request.userId = existingUser._id.toString();
             next();
         } else {
             console.log("User not found");
@@ -28,6 +34,12 @@ export const authenticationMiddleware = async (request: AuthRequest, response: R
         }
     } catch (error) {
         console.log("Error in authenticationMiddleware:", error);
-        response.status(500).json({ error: "Authentication error", detailedError: error.message });
+        if (error instanceof jwt.TokenExpiredError) {
+            response.status(401).json({ error: "Token has expired", detailedError: error.message });
+        } else if (error instanceof jwt.JsonWebTokenError) {
+            response.status(401).json({ error: "Invalid token", detailedError: error.message });
+        } else {
+            response.status(500).json({ error: "Authentication error", detailedError: error.message });
+        }
     }
 };

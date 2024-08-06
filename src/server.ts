@@ -4,9 +4,10 @@ import dotenv from 'dotenv';
 import connectToDatabase from "./db";
 import userRoutes from "../Routes/user.routes";
 import errorRoutes from "../Routes/errors.routes";
-import { authenticationMiddleware } from "../middleware ";
+
 import fs from 'fs';
 import path from 'path';
+import { authenticationMiddleware } from "../middleware ";
 
 dotenv.config();
 

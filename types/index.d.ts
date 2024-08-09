@@ -24,6 +24,7 @@ export interface IError {
     isFixed: boolean;
     image?: string;
     language: string;
-    color?: string;
+    color?: IColor;
     type?: string;
+    howDidIFix?: string;
 }

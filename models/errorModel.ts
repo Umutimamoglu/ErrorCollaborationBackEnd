@@ -33,6 +33,10 @@ const errorSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    howDidIFix: {
+        type: String,
+        required: true,
+    }
 
 }, {
     timestamps: true,

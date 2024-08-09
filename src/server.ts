@@ -1,25 +1,20 @@
 import express from "express";
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';  // path modülünü ekledim
 import connectToDatabase from "./db";
 import userRoutes from "../Routes/user.routes";
 import errorRoutes from "../Routes/errors.routes";
-
-import fs from 'fs';
-import path from 'path';
 import { authenticationMiddleware } from "../middleware ";
 
 dotenv.config();
 
-// Uploads dizininin varlığını kontrol edin ve yoksa oluşturun
-const uploadsDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-}
-
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Uploads dizinini statik olarak sunuyoruz
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const PORT = process.env.PORT || 1337;
 

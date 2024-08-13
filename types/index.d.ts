@@ -28,3 +28,18 @@ export interface IError {
     type?: string;
     howDidIFix?: string;
 }
+
+export interface IChat {
+    _id: string;
+    members: (IUser | string)[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface IMessage {
+    _id: string;
+    chatId: string;
+    sender: IUser | string;
+    message: string;
+    timestamp: Date;
+}

@@ -51,6 +51,7 @@ export const createUser = async (request: Request, response: Response) => {
         return response.status(500).json({ message: "Server error", error });
     }
 };
+
 export const loginUser = async (request: Request, response: Response) => {
     try {
         const { email, password }: IUser = request.body;
@@ -68,6 +69,7 @@ export const loginUser = async (request: Request, response: Response) => {
             return response.send({
                 token,
                 user: {
+                    _id: existingUser._id, // MongoDB ObjectId'sini burada döndürüyoruz
                     email: existingUser.email,
                     name: existingUser.name,
                 },

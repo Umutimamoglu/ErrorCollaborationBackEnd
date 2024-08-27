@@ -16,16 +16,16 @@ export const authenticationMiddleware = async (request: AuthRequest, response: R
         }
 
         const token = authorization.split(' ')[1];
-        console.log("Token received:", token);
+
 
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY || "fallback_secret_key");
-        console.log("Decoded token:", decodedToken);
+
 
         const { _id } = decodedToken as { _id: string }; // Token'dan gelen _id
 
         const existingUser = await User.findById(_id);
         if (existingUser) {
-            console.log("User found:", existingUser._id);
+
             request.userId = existingUser._id.toString();
             next();
         } else {

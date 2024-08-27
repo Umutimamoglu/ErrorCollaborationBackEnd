@@ -11,14 +11,14 @@ export const createChat = async (req, res) => {
             members: { $all: [firstId, secondId] },
         });
 
-        if (chat) return res.status(200).json(chat); // Chat odası varsa, onu geri döndür
+        if (chat) return res.status(200).json(chat);
 
         const newChat = new chatModel({
             members: [firstId, secondId],
         });
 
         const response = await newChat.save();
-        res.status(200).json(response); // Yeni chat odası oluşturulmuşsa, onu geri döndür
+        res.status(200).json(response);
 
     } catch (error) {
         console.log(error);

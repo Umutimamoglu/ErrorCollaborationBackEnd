@@ -1,10 +1,12 @@
+
+
 export interface IUser {
     email: string,
     name: string,
-    password: string
+    password: string,
+    image: string | null,
+    positionTitle: string | null
 }
-
-
 export interface IColor {
     name: string
     id: string

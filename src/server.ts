@@ -14,7 +14,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Uploads dizinini statik olarak sunuyoruz
+
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const PORT = process.env.PORT || 1337;
@@ -25,10 +25,10 @@ connectToDatabase().then(() => {
     console.error("Database connection error:", error);
 });
 
-// Login ve Register rotaları için authenticationMiddleware kullanmıyoruz
+
 app.use("/users", userRoutes);
 
-// Diğer tüm /api rotaları için authenticationMiddleware kullanıyoruz
+
 app.use("/api/errors", authenticationMiddleware, errorRoutes);
 app.use("/api/chat", authenticationMiddleware, messageRoutes)
 

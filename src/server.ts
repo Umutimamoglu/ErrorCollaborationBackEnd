@@ -29,7 +29,7 @@ connectToDatabase().then(() => {
 app.use("/users", userRoutes);
 
 
-app.use("/api/errors", authenticationMiddleware, errorRoutes);
+app.use("/api/bugs", authenticationMiddleware, errorRoutes);
 app.use("/api/chat", authenticationMiddleware, messageRoutes)
 
 app.listen(PORT, () => {

@@ -24,20 +24,32 @@ const getUserToken = (_id: Types.ObjectId) => {
 
 export const createUser = async (request: Request, response: Response) => {
     try {
-        const { name, email, password, image, positionTitle } = request.body;
+        // Body'den gelen veriler ve varsayılan değerler
+        const {
+            name,
+            email,
+            password,
+            image = "https://example.com/default-profile.png", // Varsayılan profil resmi URL'si
+            positionTitle = "Unspecified Position" // Varsayılan pozisyon başlığı
+        } = request.body;
 
-        if (!name || !email || !password || !image || !positionTitle) {
-            return response.status(400).json({ message: "All fields are required" });
+        // Zorunlu alanların kontrolü
+        if (!name || !email || !password) {
+            return response.status(400).json({ message: "Name, email, and password are required" });
         }
+
+        // Email doğrulama
         if (!validator.isEmail(email)) {
             return response.status(400).json({ message: "Email must be a valid email" });
         }
 
+        // Kullanıcının zaten var olup olmadığını kontrol et
         let user = await User.findOne({ email });
         if (user) {
             return response.status(409).json({ message: "User already exists" });
         }
 
+        // Şifreyi hashleme
         const salt = await bcrypt.genSalt(10);
         user = new User({
             name,
@@ -47,15 +59,18 @@ export const createUser = async (request: Request, response: Response) => {
             positionTitle
         });
 
+        // Kullanıcıyı kaydet
         await user.save();
-        const token = getUserToken(user._id);
 
+        // JWT oluştur ve yanıtla
+        const token = getUserToken(user._id);
         return response.status(201).json({ _id: user._id, name, token, image });
     } catch (error) {
         console.error("Error in createUser", error);
         return response.status(500).json({ message: "Server error", error });
     }
 };
+
 
 
 export const loginUser = async (request: Request, response: Response) => {
@@ -92,37 +107,71 @@ export const loginUser = async (request: Request, response: Response) => {
     }
 };
 
+
+
 export const updateUser = async (request: AuthRequest, response: Response) => {
     try {
-        const { name, email, password } = request.body;
+        const { name, email, positionTitle } = request.body;  //
         const image = request.file ? request.file.path : null;
 
-        if (!name || !email || !password || !image) {
-            return response.status(400).json({ message: "All fields are required" });
+
+
+        if (!name || !email || !image) {
+            return response.status(400).json({ message: "İsim, e-posta ve resim alanları zorunludur" });
         }
+
+
         if (!validator.isEmail(email)) {
-            return response.status(400).json({ message: "Email must be a valid email" });
+            return response.status(400).json({ message: "Geçerli bir e-posta adresi girin" });
         }
-        //
-        console.log("Uploaded file:", request.file);
-        console.log("Request body:", request.body);
-        //
+
         let user = await User.findOne({ email });
         if (!user) {
-            return response.status(404).json({ message: "User not found" });
+            return response.status(404).json({ message: "Kullanıcı bulunamadı" });
         }
 
-        const salt = await bcrypt.genSalt(10);
+
         user.name = name;
-        user.password = await bcrypt.hash(password, salt);
+        user.positionTitle = positionTitle;
         user.image = image;
 
-        await user.save();
-        const token = getUserToken(user._id);
 
-        return response.status(200).json({ _id: user._id, name, token, image });
+        if (request.body.password) {
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(request.body.password, salt);
+        }
+
+        await user.save();
+
+        return response.status(200).json({ _id: user._id, name, image: user.image, positionTitle });
     } catch (error) {
-        console.error("Error in updateUser", error);
-        return response.status(500).json({ message: "Server error", error });
+        console.error("updateUser fonksiyonunda hata oluştu", error);
+        return response.status(500).json({ message: "Sunucu hatası", error });
+    }
+};
+
+export const getUserById = async (request: Request, response: Response) => {
+    try {
+        const { userId } = request.params;
+
+
+        const user = await User.findById(userId).select('-password');
+        if (!user) {
+            return response.status(404).json({ message: "Kullanıcı bulunamadı" });
+        }
+
+
+        return response.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            positionTitle: user.positionTitle
+        });
+
+
+    } catch (error) {
+        console.error("getUserById fonksiyonunda hata oluştu", error);
+        return response.status(500).json({ message: "Sunucu hatası", error });
     }
 };

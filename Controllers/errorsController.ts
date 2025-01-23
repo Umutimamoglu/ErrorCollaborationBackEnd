@@ -7,19 +7,35 @@ import favoritesModel from "../models/favoritesModel";
 
 export const createError = async (request: AuthRequest, response: Response) => {
     try {
+        // Gelen verileri logla
+        console.log("Request Body:", request.body);
+        console.log("Uploaded File:", request.file);
+        console.log("User ID:", request.userId);
+
+        // request.body'den değerleri al
         const { color, name, isFixed, language, type, howDidIFix }: IError = request.body;
         const image = request.file ? request.file.path : null; // Yüklenen dosyanın yolu
 
+        // Kullanıcı kimliği kontrolü
         if (!request.userId) {
             console.log("User ID is not available. User not authenticated.");
             return response.status(401).json({ message: "User not authenticated." });
         }
 
+        // Eksik alanları kontrol et ve logla
         if (!name || !color || !language || !type || !howDidIFix) {
+            console.log("Eksik alanlar:");
+            if (!name) console.log("Eksik alan: name");
+            if (!color) console.log("Eksik alan: color");
+            if (!language) console.log("Eksik alan: language");
+            if (!type) console.log("Eksik alan: type");
+            if (!howDidIFix) console.log("Eksik alan: howDidIFix");
+
             return response.status(400).json({ message: "Required fields are missing." });
         }
 
-        const newError = await favoritesModel.create({
+        // Yeni hata kaydını oluştur
+        const newError = await ErrorM.create({
             user: request.userId,
             name,
             isFixed: isFixed || false,
@@ -30,12 +46,20 @@ export const createError = async (request: AuthRequest, response: Response) => {
             howDidIFix,
         });
 
+        console.log("Yeni hata başarıyla oluşturuldu:", newError);
+
         response.status(201).json(newError);
+
+        console.log("Frontend'den gelen renk:", request.body.color);
+        console.log("MongoDB'ye kaydedilen renk:", newError.color);
+
+
     } catch (error) {
         console.error("Error in createError:", error);
         response.status(500).json({ message: "Something went wrong", error: error.message });
     }
 };
+
 export const updateError = async (request: AuthRequest, response: Response) => {
     try {
         const { id } = request.params; // ID, URL parametresinden alınır

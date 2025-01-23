@@ -8,4 +8,5 @@ var userControllers_1 = require("../Controllers/userControllers");
 var userRoutes = express_1.default.Router();
 userRoutes.route("/create").post(userControllers_1.createUser);
 userRoutes.route("/login").post(userControllers_1.loginUser);
+userRoutes.route("/getUser/:userId").get(userControllers_1.getUserById);
 exports.default = userRoutes;

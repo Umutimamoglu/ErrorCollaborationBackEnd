@@ -39,50 +39,57 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authenticationMiddleware = void 0;
-var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-var userModel_1 = __importDefault(require("../models/userModel"));
-var authenticationMiddleware = function (request, response, next) { return __awaiter(void 0, void 0, void 0, function () {
-    var authorization, token, decodedToken, _id, existingUser, error_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+exports.getMessages = exports.sendMessage = void 0;
+var messageModel_1 = __importDefault(require("../models/messageModel"));
+var sendMessage = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, chatId, senderId, message, newMessage, error_1;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
-                _a.trys.push([0, 2, , 3]);
-                authorization = request.headers.authorization;
-                if (!authorization || !authorization.startsWith('Bearer ')) {
-                    console.log("Authorization header missing or malformed");
-                    return [2 /*return*/, response.status(401).json({ error: "Authorization required" })];
-                }
-                token = authorization.split(' ')[1];
-                decodedToken = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET_KEY || "fallback_secret_key");
-                _id = decodedToken._id;
-                return [4 /*yield*/, userModel_1.default.findById(_id)];
+                _a = req.body, chatId = _a.chatId, senderId = _a.senderId, message = _a.message;
+                _b.label = 1;
             case 1:
-                existingUser = _a.sent();
-                if (existingUser) {
-                    request.userId = existingUser._id.toString();
-                    next();
-                }
-                else {
-                    console.log("User not found");
-                    response.status(401).json({ error: "Invalid token" });
-                }
-                return [3 /*break*/, 3];
+                _b.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, messageModel_1.default.create({
+                        chatId: chatId,
+                        sender: senderId,
+                        message: message,
+                    })];
             case 2:
-                error_1 = _a.sent();
-                console.log("Error in authenticationMiddleware:", error_1);
-                if (error_1 instanceof jsonwebtoken_1.default.TokenExpiredError) {
-                    response.status(401).json({ error: "Token has expired", detailedError: error_1.message });
-                }
-                else if (error_1 instanceof jsonwebtoken_1.default.JsonWebTokenError) {
-                    response.status(401).json({ error: "Invalid token", detailedError: error_1.message });
-                }
-                else {
-                    response.status(500).json({ error: "Authentication error", detailedError: error_1.message });
-                }
-                return [3 /*break*/, 3];
-            case 3: return [2 /*return*/];
+                newMessage = _b.sent();
+                res.status(201).json(newMessage);
+                return [3 /*break*/, 4];
+            case 3:
+                error_1 = _b.sent();
+                console.log('Error sending message:', error_1);
+                res.status(500).json(error_1);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
         }
     });
 }); };
-exports.authenticationMiddleware = authenticationMiddleware;
+exports.sendMessage = sendMessage;
+var getMessages = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var chatId, messages, error_2;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                chatId = req.params.chatId;
+                _a.label = 1;
+            case 1:
+                _a.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, messageModel_1.default.find({ chatId: chatId }).sort({ createdAt: 1 })];
+            case 2:
+                messages = _a.sent();
+                res.status(200).json(messages);
+                return [3 /*break*/, 4];
+            case 3:
+                error_2 = _a.sent();
+                console.log('Error fetching messages:', error_2);
+                res.status(500).json(error_2);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
+exports.getMessages = getMessages;

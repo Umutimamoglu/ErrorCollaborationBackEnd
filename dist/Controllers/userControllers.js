@@ -39,7 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginUser = exports.createUser = void 0;
+exports.getUserById = exports.updateUser = exports.loginUser = exports.createUser = void 0;
 var bcrypt_1 = __importDefault(require("bcrypt"));
 var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 var dotenv_1 = __importDefault(require("dotenv"));
@@ -56,14 +56,14 @@ var getUserToken = function (_id) {
     return jsonwebtoken_1.default.sign({ _id: _id }, jwt_key, { expiresIn: "7d" });
 };
 var createUser = function (request, response) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, name_1, email, password, user, salt, _b, token, error_1;
+    var _a, name_1, email, password, image, positionTitle, user, salt, _b, token, error_1;
     var _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
             case 0:
                 _d.trys.push([0, 5, , 6]);
-                _a = request.body, name_1 = _a.name, email = _a.email, password = _a.password;
-                if (!name_1 || !email || !password) {
+                _a = request.body, name_1 = _a.name, email = _a.email, password = _a.password, image = _a.image, positionTitle = _a.positionTitle;
+                if (!name_1 || !email || !password || !image || !positionTitle) {
                     return [2 /*return*/, response.status(400).json({ message: "All fields are required" })];
                 }
                 if (!validator_1.default.isEmail(email)) {
@@ -86,12 +86,14 @@ var createUser = function (request, response) { return __awaiter(void 0, void 0,
                 return [4 /*yield*/, bcrypt_1.default.hash(password, salt)];
             case 3:
                 user = new (_b.apply(userModel_1.default, [void 0, (_c.password = _d.sent(),
+                        _c.image = image,
+                        _c.positionTitle = positionTitle,
                         _c)]))();
                 return [4 /*yield*/, user.save()];
             case 4:
                 _d.sent();
                 token = getUserToken(user._id);
-                return [2 /*return*/, response.status(201).json({ _id: user._id, name: name_1, token: token })];
+                return [2 /*return*/, response.status(201).json({ _id: user._id, name: name_1, token: token, image: image })];
             case 5:
                 error_1 = _d.sent();
                 console.error("Error in createUser", error_1);
@@ -125,8 +127,11 @@ var loginUser = function (request, response) { return __awaiter(void 0, void 0, 
                     return [2 /*return*/, response.send({
                             token: token,
                             user: {
+                                _id: existingUser._id, // MongoDB ObjectId'sini burada döndürüyoruz
                                 email: existingUser.email,
                                 name: existingUser.name,
+                                image: existingUser.image, // Image alanını ekledik
+                                positionTitle: existingUser.positionTitle, // PositionTitle alanını ekledik
                             },
                         })];
                 }
@@ -145,3 +150,77 @@ var loginUser = function (request, response) { return __awaiter(void 0, void 0, 
     });
 }); };
 exports.loginUser = loginUser;
+var updateUser = function (request, response) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, name_2, email, positionTitle, image, user, salt, _b, error_3;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                _c.trys.push([0, 6, , 7]);
+                _a = request.body, name_2 = _a.name, email = _a.email, positionTitle = _a.positionTitle;
+                image = request.file ? request.file.path : null;
+                if (!name_2 || !email || !image) {
+                    return [2 /*return*/, response.status(400).json({ message: "İsim, e-posta ve resim alanları zorunludur" })];
+                }
+                if (!validator_1.default.isEmail(email)) {
+                    return [2 /*return*/, response.status(400).json({ message: "Geçerli bir e-posta adresi girin" })];
+                }
+                return [4 /*yield*/, userModel_1.default.findOne({ email: email })];
+            case 1:
+                user = _c.sent();
+                if (!user) {
+                    return [2 /*return*/, response.status(404).json({ message: "Kullanıcı bulunamadı" })];
+                }
+                user.name = name_2;
+                user.positionTitle = positionTitle;
+                user.image = image;
+                if (!request.body.password) return [3 /*break*/, 4];
+                return [4 /*yield*/, bcrypt_1.default.genSalt(10)];
+            case 2:
+                salt = _c.sent();
+                _b = user;
+                return [4 /*yield*/, bcrypt_1.default.hash(request.body.password, salt)];
+            case 3:
+                _b.password = _c.sent();
+                _c.label = 4;
+            case 4: return [4 /*yield*/, user.save()];
+            case 5:
+                _c.sent();
+                return [2 /*return*/, response.status(200).json({ _id: user._id, name: name_2, image: user.image, positionTitle: positionTitle })];
+            case 6:
+                error_3 = _c.sent();
+                console.error("updateUser fonksiyonunda hata oluştu", error_3);
+                return [2 /*return*/, response.status(500).json({ message: "Sunucu hatası", error: error_3 })];
+            case 7: return [2 /*return*/];
+        }
+    });
+}); };
+exports.updateUser = updateUser;
+var getUserById = function (request, response) { return __awaiter(void 0, void 0, void 0, function () {
+    var userId, user, error_4;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                userId = request.params.userId;
+                return [4 /*yield*/, userModel_1.default.findById(userId).select('-password')];
+            case 1:
+                user = _a.sent();
+                if (!user) {
+                    return [2 /*return*/, response.status(404).json({ message: "Kullanıcı bulunamadı" })];
+                }
+                return [2 /*return*/, response.status(200).json({
+                        _id: user._id,
+                        name: user.name,
+                        email: user.email,
+                        image: user.image,
+                        positionTitle: user.positionTitle
+                    })];
+            case 2:
+                error_4 = _a.sent();
+                console.error("getUserById fonksiyonunda hata oluştu", error_4);
+                return [2 /*return*/, response.status(500).json({ message: "Sunucu hatası", error: error_4 })];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
+exports.getUserById = getUserById;

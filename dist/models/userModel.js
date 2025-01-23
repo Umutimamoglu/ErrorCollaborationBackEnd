@@ -21,6 +21,14 @@ var userSchema = new mongoose.Schema({
         minLength: 3,
         maxLength: 1024,
     },
+    image: {
+        type: String,
+        required: true,
+    },
+    positionTitle: {
+        type: String,
+        required: true,
+    }
 }, {
     timestamps: true,
 });

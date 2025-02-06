@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import bcrypt from 'bcrypt';
-import { Types } from 'mongoose';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-import User from "../models/userModel";
+import bcrypt from "bcrypt";
+import { Types } from "mongoose";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import validator from "validator";
+import User from "../models/userModel";
 import { IUser } from "../types";
 import { AuthRequest } from "../middleware ";
 
@@ -15,95 +15,108 @@ dotenv.config();
  * @param _id Kullanıcının MongoDB ObjectId'si.
  * @returns Oluşturulan JWT.
  */
-
-
 const getUserToken = (_id: Types.ObjectId) => {
-    const jwt_key = process.env.JWT_SECRET_KEY;
-    return jwt.sign({ _id }, jwt_key, { expiresIn: "7d" });
+    const jwtKey = process.env.JWT_SECRET_KEY || "DEFAULT_SECRET";
+    return jwt.sign({ _id }, jwtKey, { expiresIn: "1y" }); // 1 yıl geçerli token
 };
 
+/**
+ * Kullanıcı Kaydı (Register)
+ */
 export const createUser = async (request: Request, response: Response) => {
     try {
-        // Body'den gelen veriler ve varsayılan değerler
-        const {
-            name,
-            email,
-            password,
-            image = "https://example.com/default-profile.png", // Varsayılan profil resmi URL'si
-            positionTitle = "Unspecified Position" // Varsayılan pozisyon başlığı
-        } = request.body;
+        console.log("📩 Gelen Kayıt İsteği:", request.body); // 📌 Gelen JSON verisini logla
 
-        // Zorunlu alanların kontrolü
+        const { name, email, password, image, positionTitle } = request.body;
+
+        // 1) Gerekli alanları kontrol et
         if (!name || !email || !password) {
             return response.status(400).json({ message: "Name, email, and password are required" });
         }
 
-        // Email doğrulama
+        // 2) Email formatı kontrol et
         if (!validator.isEmail(email)) {
             return response.status(400).json({ message: "Email must be a valid email" });
         }
 
-        // Kullanıcının zaten var olup olmadığını kontrol et
-        let user = await User.findOne({ email });
-        if (user) {
+        // 3) Kullanıcının zaten var olup olmadığını kontrol et
+        let existingUser = await User.findOne({ email });
+        if (existingUser) {
             return response.status(409).json({ message: "User already exists" });
         }
 
-        // Şifreyi hashleme
+        // 4) Şifreyi hashleme
         const salt = await bcrypt.genSalt(10);
-        user = new User({
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // 5) Yeni kullanıcı oluştur
+        const newUser = new User({
             name,
             email,
-            password: await bcrypt.hash(password, salt),
-            image,
-            positionTitle
+            password: hashedPassword,
+            image: image || "https://example.com/default-profile.png",
+            positionTitle: positionTitle || "Unspecified Position",
         });
 
-        // Kullanıcıyı kaydet
-        await user.save();
+        // 6) Kullanıcıyı kaydet
+        await newUser.save();
+        console.log("✅ Yeni kullanıcı başarıyla kaydedildi:", newUser);
 
-        // JWT oluştur ve yanıtla
-        const token = getUserToken(user._id);
-        return response.status(201).json({ _id: user._id, name, token, image });
+        // 7) JWT oluştur ve yanıtla
+        const token = getUserToken(newUser._id);
+        return response.status(201).json({
+            token,
+            user: {
+                _id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                image: newUser.image,
+                positionTitle: newUser.positionTitle,
+            },
+        });
     } catch (error) {
-        console.error("Error in createUser", error);
-        return response.status(500).json({ message: "Server error", error });
+        console.error("❌ Hata - createUser fonksiyonu:", error);
+        return response.status(500).json({ message: "Sunucu hatası", error });
     }
 };
 
-
-
+/**
+ * Kullanıcı Girişi (Login)
+ */
 export const loginUser = async (request: Request, response: Response) => {
     try {
+        console.log("📩 Gelen Giriş İsteği:", request.body); // 📌 Gelen JSON verisini logla
+
         const { email, password }: IUser = request.body;
-        console.log("Gelen istek verileri:", request.body); // Gelen verileri kontrol edin
         const existingUser = await User.findOne({ email });
+
         if (!existingUser) {
-            console.log("E-posta için kullanıcı bulunamadı:", email);
-            return response.status(409).send({ message: "Kullanıcı bulunamadı" });
+            console.log("🚨 Kullanıcı bulunamadı:", email);
+            return response.status(404).json({ message: "Kullanıcı bulunamadı" });
         }
 
-        const isPasswordIdentical = await bcrypt.compare(password, existingUser.password);
-        if (isPasswordIdentical) {
-            const token = getUserToken(existingUser._id);
-            console.log("Kullanıcı başarıyla kimlik doğruladı:", email);
-            return response.send({
-                token,
-                user: {
-                    _id: existingUser._id, // MongoDB ObjectId'sini burada döndürüyoruz
-                    email: existingUser.email,
-                    name: existingUser.name,
-                    image: existingUser.image, // Image alanını ekledik
-                    positionTitle: existingUser.positionTitle, // PositionTitle alanını ekledik
-                },
-            });
-        } else {
-            console.log("Yanlış şifre için e-posta:", email);
-            return response.status(400).send({ message: "Yanlış kimlik bilgileri" });
+        const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
+        if (!isPasswordCorrect) {
+            console.log("🚨 Yanlış şifre için giriş denemesi:", email);
+            return response.status(400).json({ message: "Yanlış şifre" });
         }
+
+        const token = getUserToken(existingUser._id);
+        console.log("✅ Kullanıcı başarıyla giriş yaptı:", existingUser.email);
+
+        return response.json({
+            token,
+            user: {
+                _id: existingUser._id,
+                email: existingUser.email,
+                name: existingUser.name,
+                image: existingUser.image,
+                positionTitle: existingUser.positionTitle,
+            },
+        });
     } catch (error) {
-        console.log('loginUser Hatası:', error);
-        response.status(500).send({ message: "Sunucu hatası" });
+        console.error("❌ loginUser Hatası:", error);
+        return response.status(500).json({ message: "Sunucu hatası", error });
     }
 };
 

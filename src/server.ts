@@ -29,7 +29,11 @@ connectToDatabase().then(() => {
 app.use("/users", userRoutes);
 
 
-app.use("/api/bugs", authenticationMiddleware, errorRoutes);
+app.use("/api/bugs", (req, res, next) => {
+    console.log("🐞 /api/bugs yoluna bir istek geldi:", req.method, req.url);
+    next();
+}, authenticationMiddleware, errorRoutes);
+
 app.use("/api/chat", authenticationMiddleware, messageRoutes)
 
 app.listen(PORT, () => {

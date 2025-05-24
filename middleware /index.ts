@@ -13,6 +13,7 @@ export const authenticationMiddleware = async (request: AuthRequest, response: R
             console.log("Authorization header missing or malformed:", authorization); // Gelen header'ı loglayın
             return response.status(401).json({ error: "Authorization required" });
         }
+        console.log("➡️ Authorization Header:", authorization);
 
         const token = authorization.split(' ')[1];
 

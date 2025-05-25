@@ -181,43 +181,24 @@ export const addToFavorites = async (request: AuthRequest, response: Response) =
         response.status(500).json({ message: "Something went wrong", error: error.message });
     }
 };
+
 export const getAllFavori = async (request: AuthRequest, response: Response) => {
-    console.log("🔔 [ROUTE] GET /getAllFavori endpoint çağrıldı");
-
     try {
-        console.log("🧪 getAllFavori fonksiyonu başladı");
-
-        // Kullanıcı ID'si loglanıyor
-        console.log("🧩 Gelen Token'dan çözümlenen userId:", request.userId);
-
         if (!request.userId) {
-            console.log("🚫 [AUTH] User ID is not available. User not authenticated.");
+            console.log("User ID is not available. User not authenticated.");
             return response.status(401).json({ message: "User not authenticated." });
         }
 
-        console.log("🔍 [DB] Kullanıcının favori hataları getiriliyor...");
-
-        const userErrors = await favoritesModel
-            .find({ user: request.userId })
-            .populate('user', 'name email');
-
-        console.log("🛠 Favoriler bulundu mu?", userErrors);
+        // Fetch user's favorite errors and populate the user field
+        const userErrors = await favoritesModel.find({ user: request.userId }).populate('user');
 
         if (!userErrors || userErrors.length === 0) {
-            console.log("ℹ️ [RESULT] Bu kullanıcı için favori hata bulunamadı.");
             return response.status(404).json({ message: "No errors found for this user." });
         }
 
-        console.log(`✅ [RESULT] ${userErrors.length} favori hata bulundu.`);
-        console.log("📦 [DATA] Favori Hatalar:", JSON.stringify(userErrors, null, 2));
-
-        return response.status(200).json(userErrors);
-
+        response.status(200).json(userErrors);
     } catch (error) {
-        console.error("❌ [ERROR] getAllFavori sırasında hata:", error);
-        return response.status(500).json({
-            message: "Something went wrong",
-            error: error instanceof Error ? error.message : String(error)
-        });
+        console.error("Error in getAllFavori:", error);
+        response.status(500).json({ message: "Something went wrong", error: error.message });
     }
 };

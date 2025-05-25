@@ -25,27 +25,36 @@ const getUserToken = (_id: Types.ObjectId) => {
  */
 export const createUser = async (request: Request, response: Response) => {
     try {
-        console.log("📩 Gelen Kayıt İsteği:", request.body); // 📌 Gelen JSON verisini logla
+        console.log("📩 Gelen Kayıt İsteği:", request.body);
 
-        const { name, email, password, image, positionTitle } = request.body;
+        const {
+            name,
+            email,
+            password,
+            image,
+            positionTitle,
+            fixedBugsCount,
+            experience,
+            country
+        } = request.body;
 
-        // 1) Gerekli alanları kontrol et
+        // 1) Zorunlu alan kontrolü
         if (!name || !email || !password) {
             return response.status(400).json({ message: "Name, email, and password are required" });
         }
 
-        // 2) Email formatı kontrol et
+        // 2) Email geçerli mi?
         if (!validator.isEmail(email)) {
             return response.status(400).json({ message: "Email must be a valid email" });
         }
 
-        // 3) Kullanıcının zaten var olup olmadığını kontrol et
-        let existingUser = await User.findOne({ email });
+        // 3) Kullanıcı zaten kayıtlı mı?
+        const existingUser = await User.findOne({ email });
         if (existingUser) {
             return response.status(409).json({ message: "User already exists" });
         }
 
-        // 4) Şifreyi hashleme
+        // 4) Şifreyi hashle
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -56,13 +65,16 @@ export const createUser = async (request: Request, response: Response) => {
             password: hashedPassword,
             image: image || "https://example.com/default-profile.png",
             positionTitle: positionTitle || "Unspecified Position",
+            fixedBugsCount: fixedBugsCount || "0",
+            experience: experience || "Unknown",
+            country: country || "Unknown"
         });
 
-        // 6) Kullanıcıyı kaydet
+        // 6) Veritabanına kaydet
         await newUser.save();
         console.log("✅ Yeni kullanıcı başarıyla kaydedildi:", newUser);
 
-        // 7) JWT oluştur ve yanıtla
+        // 7) JWT token üret ve cevapla
         const token = getUserToken(newUser._id);
         return response.status(201).json({
             token,
@@ -72,6 +84,9 @@ export const createUser = async (request: Request, response: Response) => {
                 email: newUser.email,
                 image: newUser.image,
                 positionTitle: newUser.positionTitle,
+                fixedBugsCount: newUser.fixedBugsCount,
+                experience: newUser.experience,
+                country: newUser.country
             },
         });
     } catch (error) {
@@ -121,47 +136,65 @@ export const loginUser = async (request: Request, response: Response) => {
 };
 
 
-
-export const updateUser = async (request: AuthRequest, response: Response) => {
+export const updateUser = async (request: Request, response: Response) => {
     try {
-        const { name, email, positionTitle } = request.body;  //
-        const image = request.file ? request.file.path : null;
+        const {
+            _id,
+            name,
+            email,
+            positionTitle,
+            fixedBugsCount,
+            experience,
+            country,
+            image, // artık string geliyor
+            password
+        } = request.body;
 
-
-
-        if (!name || !email || !image) {
-            return response.status(400).json({ message: "İsim, e-posta ve resim alanları zorunludur" });
+        if (!_id || !name || !email) {
+            return response.status(400).json({ message: "ID, isim ve e-posta zorunludur" });
         }
-
 
         if (!validator.isEmail(email)) {
             return response.status(400).json({ message: "Geçerli bir e-posta adresi girin" });
         }
 
-        let user = await User.findOne({ email });
+        const user = await User.findById(_id);
         if (!user) {
             return response.status(404).json({ message: "Kullanıcı bulunamadı" });
         }
 
-
         user.name = name;
-        user.positionTitle = positionTitle;
-        user.image = image;
+        user.email = email;
+        user.positionTitle = positionTitle || user.positionTitle;
+        user.fixedBugsCount = fixedBugsCount || user.fixedBugsCount;
+        user.experience = experience || user.experience;
+        user.country = country || user.country;
+        if (image) user.image = image; // artık sadece string
 
-
-        if (request.body.password) {
+        if (password) {
             const salt = await bcrypt.genSalt(10);
-            user.password = await bcrypt.hash(request.body.password, salt);
+            user.password = await bcrypt.hash(password, salt);
         }
 
         await user.save();
 
-        return response.status(200).json({ _id: user._id, name, image: user.image, positionTitle });
+        return response.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            positionTitle: user.positionTitle,
+            fixedBugsCount: user.fixedBugsCount,
+            experience: user.experience,
+            country: user.country
+        });
+
     } catch (error) {
-        console.error("updateUser fonksiyonunda hata oluştu", error);
+        console.error("❌ updateUser hatası:", error);
         return response.status(500).json({ message: "Sunucu hatası", error });
     }
 };
+
 
 export const getUserById = async (request: Request, response: Response) => {
     try {
@@ -179,7 +212,10 @@ export const getUserById = async (request: Request, response: Response) => {
             name: user.name,
             email: user.email,
             image: user.image,
-            positionTitle: user.positionTitle
+            positionTitle: user.positionTitle,
+            fixedBugsCount: user.fixedBugsCount,
+            experience: user.experience,
+            country: user.country
         });
 
 

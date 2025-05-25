@@ -191,9 +191,8 @@ export const getAllFavori = async (request: AuthRequest, response: Response) => 
 
         // Fetch user's favorite errors and populate the user field
         const userErrors = await favoritesModel.find({ user: request.userId }).populate('user');
-
         if (!userErrors || userErrors.length === 0) {
-            return response.status(404).json({ message: "No errors found for this user." });
+            return response.status(200).json([]); // ✅ Favori yoksa boş liste dön
         }
 
         response.status(200).json(userErrors);

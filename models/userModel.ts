@@ -29,6 +29,18 @@ const userSchema = new mongoose.Schema(
         positionTitle: {
             type: String,
             required: true,
+        },
+        fixedBugsCount: {
+            type: String,
+            default: "0",
+        },
+        experience: {
+            type: String,
+            default: "Unknown",
+        },
+        country: {
+            type: String,
+            default: "Unknown",
         }
     },
     {

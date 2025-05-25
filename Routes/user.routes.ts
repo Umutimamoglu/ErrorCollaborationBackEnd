@@ -6,5 +6,6 @@ const userRoutes = express.Router()
 userRoutes.route("/create").post(createUser)
 userRoutes.route("/login").post(loginUser)
 userRoutes.route("/getUser/:userId").get(getUserById)
+userRoutes.route("/updateUser").put(upload.single("image"), updateUser);
 
 export default userRoutes

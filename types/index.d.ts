@@ -6,6 +6,9 @@ export interface IUser {
     password: string,
     image: string | null,
     positionTitle: string | null
+    fixedBugsCount: string | null,     // yeni alan
+    experience: string | null,         // yeni alan
+    country: string | null;
 }
 export interface IColor {
     name: string

@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import validator from "validator";
 import User from "../models/userModel";
 import { IUser } from "../types";
-import { AuthRequest } from "../middleware ";
+
 
 dotenv.config();
 
@@ -35,7 +35,8 @@ export const createUser = async (request: Request, response: Response) => {
             positionTitle,
             fixedBugsCount,
             experience,
-            country
+            country,
+            pushNotificationToken
         } = request.body;
 
         // 1) Zorunlu alan kontrolü
@@ -59,6 +60,7 @@ export const createUser = async (request: Request, response: Response) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // 5) Yeni kullanıcı oluştur
+
         const newUser = new User({
             name,
             email,
@@ -67,15 +69,16 @@ export const createUser = async (request: Request, response: Response) => {
             positionTitle: positionTitle || "Unspecified Position",
             fixedBugsCount: fixedBugsCount || "0",
             experience: experience || "Unknown",
-            country: country || "Unknown"
+            country: country || "Unknown",
+            pushNotificationToken: pushNotificationToken || null // <-- ✅ burada kaydet
         });
+
 
         // 6) Veritabanına kaydet
         await newUser.save();
-        console.log("✅ Yeni kullanıcı başarıyla kaydedildi:", newUser);
 
-        // 7) JWT token üret ve cevapla
         const token = getUserToken(newUser._id);
+
         return response.status(201).json({
             token,
             user: {
@@ -86,7 +89,8 @@ export const createUser = async (request: Request, response: Response) => {
                 positionTitle: newUser.positionTitle,
                 fixedBugsCount: newUser.fixedBugsCount,
                 experience: newUser.experience,
-                country: newUser.country
+                country: newUser.country,
+                pushNotificationToken: newUser.pushNotificationToken, // opsiyonel
             },
         });
     } catch (error) {
@@ -100,24 +104,26 @@ export const createUser = async (request: Request, response: Response) => {
  */
 export const loginUser = async (request: Request, response: Response) => {
     try {
-        console.log("📩 Gelen Giriş İsteği:", request.body); // 📌 Gelen JSON verisini logla
+        const { email, password, pushNotificationToken } = request.body;
 
-        const { email, password }: IUser = request.body;
         const existingUser = await User.findOne({ email });
 
         if (!existingUser) {
-            console.log("🚨 Kullanıcı bulunamadı:", email);
             return response.status(404).json({ message: "Kullanıcı bulunamadı" });
         }
 
         const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
         if (!isPasswordCorrect) {
-            console.log("🚨 Yanlış şifre için giriş denemesi:", email);
             return response.status(400).json({ message: "Yanlış şifre" });
         }
 
+        // ✅ Eğer yeni token geldiyse, kullanıcıya yaz
+        if (pushNotificationToken) {
+            existingUser.pushNotificationToken = pushNotificationToken;
+            await existingUser.save();
+        }
+
         const token = getUserToken(existingUser._id);
-        console.log("✅ Kullanıcı başarıyla giriş yaptı:", existingUser.email);
 
         return response.json({
             token,
@@ -127,6 +133,7 @@ export const loginUser = async (request: Request, response: Response) => {
                 name: existingUser.name,
                 image: existingUser.image,
                 positionTitle: existingUser.positionTitle,
+                pushNotificationToken: existingUser.pushNotificationToken // opsiyonel
             },
         });
     } catch (error) {
@@ -134,6 +141,7 @@ export const loginUser = async (request: Request, response: Response) => {
         return response.status(500).json({ message: "Sunucu hatası", error });
     }
 };
+
 
 
 export const updateUser = async (request: Request, response: Response) => {

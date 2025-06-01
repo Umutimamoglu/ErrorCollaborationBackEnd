@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema(
         country: {
             type: String,
             default: "Unknown",
+        },
+        pushNotificationToken: {
+            type: String,
+            required: false,
         }
     },
     {

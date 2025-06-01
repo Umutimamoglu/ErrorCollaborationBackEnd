@@ -3,6 +3,7 @@ import { IError } from '../types/index';
 import ErrorM from "../models/errorModel";
 import { AuthRequest } from "../middleware ";
 import favoritesModel from "../models/favoritesModel";
+import User from "../models/userModel";
 
 
 export const createError = async (request: AuthRequest, response: Response) => {
@@ -199,5 +200,26 @@ export const getAllFavori = async (request: AuthRequest, response: Response) => 
     } catch (error) {
         console.error("Error in getAllFavori:", error);
         response.status(500).json({ message: "Something went wrong", error: error.message });
+    }
+};
+
+
+
+// controllers/userController.ts içine:
+export const updatePushToken = async (req: AuthRequest, res: Response) => {
+    const { userId } = req.params;
+    const { pushNotificationToken } = req.body;
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+
+        user.pushNotificationToken = pushNotificationToken;
+        await user.save();
+
+        return res.status(200).json({ message: "Token güncellendi", pushNotificationToken });
+    } catch (err) {
+        console.error("❌ Token güncelleme hatası:", err);
+        return res.status(500).json({ message: "Sunucu hatası", err });
     }
 };

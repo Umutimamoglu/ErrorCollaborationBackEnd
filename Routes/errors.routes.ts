@@ -1,5 +1,5 @@
 import express from "express";
-import { addToFavorites, createError, deleteError, getAllBugs, getAllFavori, getMyBugs, updateError } from "../Controllers/errorsController";
+import { addToFavorites, createError, deleteError, getAllBugs, getAllFavori, getMyBugs, updateError, updatePushToken } from "../Controllers/errorsController";
 import upload from "../middleware /upload";
 import { updateUser } from "../Controllers/userControllers";
 
@@ -19,6 +19,10 @@ router.post("/addToFavorites", addToFavorites)
 router.get("/getAllFavori", getAllFavori)
 
 router.put("/update", upload.single('image'), updateUser);
+
+// routes/userRoutes.ts gibi bir yerde:
+router.patch('/update-token/:userId', updatePushToken);
+
 
 
 export default router;

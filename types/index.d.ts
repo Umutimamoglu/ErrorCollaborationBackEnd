@@ -8,7 +8,8 @@ export interface IUser {
     positionTitle: string | null
     fixedBugsCount: string | null,     // yeni alan
     experience: string | null,         // yeni alan
-    country: string | null;
+    country: string | null,
+    pushNotificationToken?: string | null;
 }
 export interface IColor {
     name: string

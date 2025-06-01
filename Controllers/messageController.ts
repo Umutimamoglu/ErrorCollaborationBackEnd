@@ -17,7 +17,10 @@ export const sendMessage = async (req, res) => {
                 recipient.pushNotificationToken,
                 "Yeni Mesaj",
                 message,
-                { chatId }
+                {
+                    screen: "ChatScreen",
+                    params: { chatId },
+                }
             );
         }
 

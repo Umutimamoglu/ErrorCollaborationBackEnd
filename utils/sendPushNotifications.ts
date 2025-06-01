@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+
 export const sendPushNotification = async (
     expoPushToken: string,
     title: string,
@@ -10,6 +11,7 @@ export const sendPushNotification = async (
         console.error("❌ Geçersiz Expo push token:", expoPushToken);
         return;
     }
+
     const message = {
         to: expoPushToken,
         sound: 'default',
@@ -17,10 +19,9 @@ export const sendPushNotification = async (
         body,
         data: {
             screen: data.screen,
-            params: data.params,
+            params: data.params, // 🔗 Örn: { chatId, senderUserId }
         },
     };
-
 
     try {
         const response = await axios.post('https://exp.host/--/api/v2/push/send', message, {
